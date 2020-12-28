@@ -31,6 +31,7 @@ class Graph:
         return len(self.edges.keys())
     
     def density(self):
+        # TODO: the graph is dense or sparse?
         num_nodes = self.number_of_nodes()
         num_edges = self.number_of_edges()
         density = 2 * num_edges / (num_nodes * (num_nodes - 1))
@@ -44,7 +45,6 @@ class Graph:
     def degree_distribution_plot(self):
         degrees = Counter([self.degree(n) for n in self.nodes])
         x, y = zip(*degrees.items())
-        
         plt.figure(figsize=(14, 6))
         plt.xlabel('Degree')
         plt.xscale('log')
