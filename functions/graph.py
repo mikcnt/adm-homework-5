@@ -22,6 +22,9 @@ class Graph:
     def number_of_edges(self):
         return self.__edges_num
     
+    def nodes_with_edges(self):
+        return len(self.edges.keys())
+    
     def __getitem__(self, src):
         if len(self.edges[src]) == 0:
             raise KeyError(src)
