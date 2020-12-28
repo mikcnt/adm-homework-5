@@ -18,8 +18,15 @@ class Graph:
         self.neighbours[dst].add(src)
         
     def is_directed(self):
-        # TODO: when can we say a graph is directed?
-        return True
+        for src, dest in self.edges.items():
+            is_direct = False
+            for node in dest:
+                if src not in self.edges[node]:
+                    is_direct = True
+                    break
+            if is_direct:
+                break
+        return is_direct
     
     def number_of_nodes(self):
         return len(self.nodes)
