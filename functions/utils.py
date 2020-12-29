@@ -38,8 +38,14 @@ def unique_category(link_cat):
             rand_choice = cats[rand_number]
             link_cat[link] = rand_choice
             
-    with open('data/wiki-topcats-categories-processed.txt', 'a') as new_file:
-        for link, cat in link_cat.items():
-            new_file.write(cat + ' ' + str(link) + '\n')
+    # Get the inverse dictionary, having categories as keys and links as values
+    cat_link = defaultdict(list)
+    for link, cat in link_cat.items():
+        cat_link[cat].append(link)
             
-    return link_cat
+    with open('data/wiki-topcats-categories-processed.txt', 'a') as file:
+        for cat, links in cat_link.items():
+            links = ' '.join([str(link) for link in links])
+            file.write(cat + ': ' + links + '\n')
+            
+    return cat_link
