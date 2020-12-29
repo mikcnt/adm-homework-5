@@ -16,9 +16,7 @@ def links_per_cat(line):
     return category, links
 
 def link_category_dict():
-    def def_value():
-        return []
-    link_cat = defaultdict(def_value)
+    link_cat = defaultdict(list)
 
     with open('data/wiki-topcats-categories.txt') as file:
         for line in file:
@@ -45,9 +43,3 @@ def unique_category(link_cat):
             new_file.write(cat + ' ' + str(link) + '\n')
             
     return link_cat
-
-
-import networkx as nx
-
-
-DG = nx.DiGraph()
