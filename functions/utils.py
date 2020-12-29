@@ -45,9 +45,3 @@ def unique_category(link_cat):
             new_file.write(cat + ' ' + str(link) + '\n')
             
     return link_cat
-
-
-import networkx as nx
-
-
-DG = nx.DiGraph()
