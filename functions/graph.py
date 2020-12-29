@@ -62,6 +62,17 @@ class Graph:
         plt.scatter(x, y, marker='.', zorder=2)
         plt.show()
     
+    def pages_within_clicks(self, v, d):
+        src_pages = {v}
+        pages = set()
+        for _ in range(d):
+            temp = set()
+            for src in src_pages:
+                temp.update(self.edges[src])
+            pages.update(temp)
+            src_pages = temp
+        return pages
+    
     def __getitem__(self, src):
         if len(self.edges[src]) == 0:
             raise KeyError(src)
