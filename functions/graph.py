@@ -15,7 +15,8 @@ class Graph:
     def __init__(self):
         self.edges = defaultdict(set)
         self.nodes = set()
-        self.neighbours = defaultdict(set)
+        self.in_neighbours = defaultdict(set)
+        self.out_neighbours = defaultdict(set)
         self.__edges_num = 0
 
     def add_edge(self, src, dst):
@@ -34,8 +35,8 @@ class Graph:
         # Add both source and dest nodes to the set of nodes
         self.nodes.update([src, dst])
         # Keep track of the neighbours of each node in the graph
-        self.neighbours[src].add(dst)
-        self.neighbours[dst].add(src)
+        self.in_neighbours[dst].add(src)
+        self.out_neighbours[src].add(dst)
         
     def is_directed(self):
         """Check if the graph is directed, by looking at the source nodes of the edges and searching for an inverse edge."""
@@ -74,9 +75,19 @@ class Graph:
             density = density / 2
         return density
     
+    def in_degree(self, node):
+        """Cardinality of the in-neighbours of the node."""
+        return len(self.in_neighbours[node])
+    
+    def out_degree(self, node):
+        """Cardinality of the out-neighbours of the node."""
+        return len(self.out_neighbours[node])
+    
     def degree(self, node):
-        """The degree of a node is defined as the number of neighbours it has."""
-        return len(self.neighbours[node])
+        """The degree of a node is defined as the number of neighbours it has.
+        This corresponds to the cardinality of the union of the in-neighbours and the out-neighbours.
+        """
+        return len(set.union(self.in_neighbours[node], self.out_neighbours[node]))
     
     def degree_distribution_plot(self):
         """Plot the degree distribution in logarithmic scale."""
