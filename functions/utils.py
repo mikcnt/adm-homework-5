@@ -28,24 +28,26 @@ def link_category_dict():
     
     return link_cat
 
-def unique_category(link_cat):
-    for link, cats in link_cat.items():
+def category_link_dict(link_cat_dict):
+    # Extract one random category for each link
+    for link, cats in link_cat_dict.items():
         size = len(cats)
         if size == 1:
-            link_cat[link] = cats[0]
+            link_cat_dict[link] = cats[0]
         else:
             rand_number = np.random.randint(low=0, high=size)
             rand_choice = cats[rand_number]
-            link_cat[link] = rand_choice
+            link_cat_dict[link] = rand_choice
             
     # Get the inverse dictionary, having categories as keys and links as values
-    cat_link = defaultdict(list)
-    for link, cat in link_cat.items():
-        cat_link[cat].append(link)
-            
+    cat_link_dict = defaultdict(list)
+    for link, cat in link_cat_dict.items():
+        cat_link_dict[cat].append(link)
+
+    return cat_link_dict
+
+def write_category_processed(cat_link_dict):
     with open('data/wiki-topcats-categories-processed.txt', 'a') as file:
-        for cat, links in cat_link.items():
+        for cat, links in cat_link_dict.items():
             links = ' '.join([str(link) for link in links])
             file.write(cat + ': ' + links + '\n')
-            
-    return cat_link

@@ -131,3 +131,10 @@ class Graph:
         if len(self.edges[src]) == 0:
             raise KeyError(src)
         return list(self.edges[src])
+
+def most_central_article(graph, cat_link_dict, category):
+    nodes_in_cat = cat_link_dict[category]
+    in_degrees = {}
+    for node in nodes_in_cat:
+        in_degrees[node] = graph.in_degree(node)
+    return max(in_degrees, key=in_degrees.get)
