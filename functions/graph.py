@@ -67,7 +67,6 @@ class Graph:
         Returns:
             float: Density of the graph (between 0 and 1).
         """
-        # TODO: the graph is dense or sparse?
         num_nodes = self.number_of_nodes()
         num_edges = self.number_of_edges()
         density = 2 * num_edges / (num_nodes * (num_nodes - 1))
