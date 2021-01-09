@@ -110,7 +110,7 @@ def categories_size(graph, threshold=1000):
     table = []
     for category in graph.cat_link_dict.keys():
         size = len(graph.nodes_in_category(category))
-        if size > 1000:
+        if size > threshold:
             table.append([category, size])
 
     table = sorted(table, key=lambda x: x[1], reverse=True)
