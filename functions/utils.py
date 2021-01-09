@@ -1,6 +1,9 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from collections import defaultdict
 import pickle
+import networkx as nx
+
 
 # For reproducibility
 np.random.seed(42)
@@ -68,3 +71,53 @@ def categories_in_graph():
             cat_link_dict[category] = links
 
     return cat_link_dict
+
+
+def graph_example():
+    """Draw directed graph example. Used to show `min_edge_cut` algorithm rationale."""
+    edges = [
+        (1, 2),
+        (1, 3),
+        (1, 6),
+        (1, 7),
+        (2, 4),
+        (3, 4),
+        (6, 8),
+        (7, 8),
+        (4, 5),
+        (8, 5),
+        (1, 5),
+    ]
+
+    pos = {
+        1: (2, 6),
+        2: (4, 10),
+        3: (4, 8),
+        4: (8, 9),
+        5: (10, 6),
+        6: (4, 4),
+        7: (7, 5),
+        8: (8, 3),
+    }
+
+    G = nx.DiGraph()
+    G.add_edges_from(edges)
+    plt.figure(figsize=(10, 5))
+    nx.draw(G, pos, with_labels=True)
+
+
+def categories_size(graph, threshold=1000):
+    table = []
+    for category in graph.cat_link_dict.keys():
+        size = len(graph.nodes_in_category(category))
+        if size > 1000:
+            table.append([category, size])
+
+    table = sorted(table, key=lambda x: x[1], reverse=True)
+
+    max_lenght = max([len(x[0]) for x in table])
+
+    width = max_lenght + 3
+
+    for category, size in table:
+        print("{} | {}".format(category.ljust(width), str(size).ljust(width)))
