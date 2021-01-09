@@ -1,7 +1,7 @@
 from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
 from collections import deque
-from utils import categories_in_graph
+from .utils import categories_in_graph
 
 
 class Graph:
@@ -222,3 +222,44 @@ class Graph:
         # We return the max of these distances, since it is the
         # value for which we are sure we hit all the nodes in `pages`
         return max(distances)
+
+    def nodes_in_category(self, category):
+        """Returns the nodes in the category actually contained in the graph nodes.
+
+        Args:
+            category (str): String name of the input category.
+
+        Returns:
+            set: Set containing the graph nodes contained in the category.
+        """
+        return set(self.cat_link_dict[category]).intersection(self.nodes)
+
+
+def category_subgraph(graph, category1, category2):
+    """Create subgraph containing the edges with source nodes in the
+    first category and destination nodes in the second one.
+
+    Args:
+        graph (Graph): Starting graph.
+        category1 (str): String name of the first input category (source nodes).
+        category2 (str): String name of the second input category (destination nodes).
+
+    Returns:
+        Graph: Subgraph with source in cat1 and destination in cat2.
+    """
+    subgraph = Graph()
+
+    nodes_in_cat1 = set(graph.cat_link_dict[category1])
+    filtered_nodes1 = nodes_in_cat1.intersection(graph.nodes)
+
+    nodes_in_cat2 = set(graph.cat_link_dict[category2])
+    filtered_nodes2 = nodes_in_cat2.intersection(graph.nodes)
+
+    for src in filtered_nodes1:
+        dest_nodes = graph[src]
+        for dst in dest_nodes:
+            if dst not in filtered_nodes2:
+                continue
+            subgraph.add_edge(src, dst)
+
+    return subgraph
