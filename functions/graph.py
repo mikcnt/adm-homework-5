@@ -14,7 +14,7 @@ class Graph:
         nodes (set): Set containing the whole list of nodes of the graph.
         in_neighbours (defaultdict): Dictionary containing the in-neighbours of a node.
         out_neighbours (defaultdict): Dictionary containing the out-neighbours of a node.
-        __edges_num (int): Number of edges in the graph.
+        edges_num (int): Number of edges in the graph.
 
     """
 
@@ -24,9 +24,7 @@ class Graph:
         self.nodes = set()
         self.in_neighbours = defaultdict(set)
         self.out_neighbours = defaultdict(set)
-        self.__edges_num = 0
-
-        self.visited = set()
+        self.edges_num = 0
 
     def __getitem__(self, node):
         if node not in self.nodes:
@@ -43,7 +41,7 @@ class Graph:
         # If the edge already exist, we won't do anything
         if dst in self.edges[src]:
             return
-        self.__edges_num += 1
+        self.edges_num += 1
         # Add the actual edge
         self.edges[src].add(dst)
         # Add both source and dest nodes to the set of nodes
@@ -72,7 +70,7 @@ class Graph:
         return len(self.nodes)
 
     def number_of_edges(self):
-        return self.__edges_num
+        return self.edges_num
 
     def nodes_with_edges(self):
         return len(self.edges.keys())
@@ -143,19 +141,6 @@ class Graph:
             # starting from the ones we just obtained
             src_pages = temp
         return pages
-
-    def bfs(self, root):
-        visited = set()
-        queue = deque([root])
-        visited.add(root)
-
-        while queue:
-            vertex = queue.popleft()
-            for neighbour in self.edges[vertex]:
-                if neighbour not in visited:
-                    visited.add(neighbour)
-                    queue.append(neighbour)
-        return visited
 
     def shortest_path(self, src, dst):
         """Returns the shortest path between a starting node and a target node,
