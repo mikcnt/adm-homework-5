@@ -20,6 +20,7 @@ class Graph:
 
     def __init__(self):
         self.cat_link_dict = categories_in_graph()
+        self.categories = self.retrieve_categories()
         self.edges = defaultdict(set)
         self.nodes = set()
         self.in_neighbours = defaultdict(set)
@@ -227,6 +228,9 @@ class Graph:
         # We return the max of these distances, since it is the
         # value for which we are sure we hit all the nodes in `pages`
         return max(distances)
+
+    def retrieve_categories(self):
+        return list(self.cat_link_dict.keys())
 
     def nodes_in_category(self, category):
         """Returns the nodes in the category actually contained in the graph nodes.
