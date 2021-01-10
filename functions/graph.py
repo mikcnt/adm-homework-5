@@ -1,3 +1,4 @@
+import numpy as np
 from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
 from collections import deque
@@ -24,6 +25,8 @@ class Graph:
         self.in_neighbours = defaultdict(set)
         self.out_neighbours = defaultdict(set)
         self.__edges_num = 0
+
+        self.visited = set()
 
     def __getitem__(self, node):
         if node not in self.nodes:
@@ -154,40 +157,6 @@ class Graph:
                     queue.append(neighbour)
         return visited
 
-    def disjoint_paths(self, src, dst):
-        """Computes disjoint paths of a graph between a starting and a target node.
-
-        Args:
-            graph (Graph): Input graph.
-            src (int): Source node of the paths.
-            dst (int): Destination node of the paths.
-
-        Returns:
-            list: List of all the disjoint paths between the two nodes. Empty if no such path exist.
-        """
-        # Base case
-        if src == dst:
-            return [src]
-        # Keep track of the visited nodes to avoid linked paths
-        visited = {src}
-        queue = deque([(src, [])])
-        # Keep track of paths. Whenever one is found, we go ahead on the queue
-        paths = []
-        while queue:
-            current, path = queue.popleft()
-            visited.add(current)
-            for neighbour in self.edges[current]:
-                # `neighbour == dst` means that we found a path
-                if neighbour == dst:
-                    paths.append(path + [current, neighbour])
-                    continue
-                if neighbour in visited:
-                    continue
-                queue.append((neighbour, path + [current]))
-                visited.add(neighbour)
-        # If there are no paths returns []
-        return paths
-
     def shortest_path(self, src, dst):
         """Returns the shortest path between a starting node and a target node,
         according to the Dijkstra algorithm.
@@ -316,39 +285,63 @@ def category_subgraph(graph, category1, category2):
     return subgraph
 
 
-def disjoint_paths(graph, src, dst):
-    """Computes disjoint paths of a graph between a starting and a target node.
+class DisjointPaths:
+    """Class used to compute disjoint paths between two nodes. Uses depth-first-search internally.
 
-    Args:
+    Attributes:
         graph (Graph): Input graph.
-        src (int): Source node of the paths.
-        dst (int): Destination node of the paths.
+        paths (list): List of disjoint paths. `paths` gets updated whenever a new disjoint path is found.
+        path (list): List containing the temporary path. `path` gets re-initialized whenever an entire path from
+                     source to destination is found.
+        visited (set): Set containing the nodes visited during the search.
 
-    Returns:
-        list: List of all the disjoint paths between the two nodes. Empty if no such path exist.
     """
-    # Base case
-    if src == dst:
-        return [src]
-    # Keep track of the visited nodes to avoid linked paths
-    visited = {src}
-    queue = deque([(src, [])])
-    # Keep track of paths. Whenever one is found, we go ahead on the queue
-    paths = []
-    while queue:
-        current, path = queue.popleft()
-        visited.add(current)
-        for neighbour in graph.edges[current]:
-            # `neighbour == dst` means that we found a path
-            if neighbour == dst:
-                paths.append(path + [current, neighbour])
+
+    def __init__(self, graph):
+        self.graph = graph
+        self.paths = []
+        self.path = []
+        self.visited = defaultdict(bool)
+
+    def search(self, src, dst):
+        """Computes the actual search for the disjoint paths.
+
+        Args:
+            src (int): Starting node.
+            dst (int): Target node.
+        """
+        if self.__dfs(src, dst):
+            # needed to find multiple paths
+            # otherwise it will not go after the first run (as the src is visited)
+            self.search(src, dst)
+
+    def __dfs(self, node, dst):
+        """Helper function, computes a modified version of the depth-first-search.
+
+        Args:
+            node (int): Starting node.
+            dst (int): Target node.
+
+        Returns:
+            boolean: True if a path between node and dst is found, False otherwise.
+        """
+        if node == dst:
+            self.path.append(node)
+            self.paths.append(self.path)
+            self.path = []
+            return True
+
+        self.path.append(node)
+
+        for neighbour in self.graph[node]:
+            if self.visited[(node, neighbour)]:
                 continue
-            if neighbour in visited:
-                continue
-            queue.append((neighbour, path + [current]))
-            visited.add(neighbour)
-    # If there are no paths returns []
-    return paths
+            self.visited[(node, neighbour)] = True
+            if self.__dfs(neighbour, dst):
+                return True
+        # removing the current node from the path because we didn't find anything
+        self.path.remove(node)
+        return False
 
 
 def min_edge_cut(graph, src, dst):
@@ -361,7 +354,8 @@ def min_edge_cut(graph, src, dst):
 
     Returns:
         int: Minimum number of cuts to be made on the edges in order to disconnect the two nodes.
-             0 if the nodes are not connected.
+        0 if the nodes are not connected.
     """
-    paths = graph.disjoint_paths(src, dst)
-    return len(paths)
+    d = DisjointPaths(graph)
+    d.search(src, dst)
+    return len(d.paths)
