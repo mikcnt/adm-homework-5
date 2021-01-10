@@ -310,12 +310,12 @@ class DisjointPaths:
             src (int): Starting node.
             dst (int): Target node.
         """
-        if self.__dfs(src, dst):
+        if self.dfs(src, dst):
             # needed to find multiple paths
             # otherwise it will not go after the first run (as the src is visited)
             self.search(src, dst)
 
-    def __dfs(self, node, dst):
+    def dfs(self, node, dst):
         """Helper function, computes a modified version of the depth-first-search.
 
         Args:
@@ -337,7 +337,7 @@ class DisjointPaths:
             if self.visited[(node, neighbour)]:
                 continue
             self.visited[(node, neighbour)] = True
-            if self.__dfs(neighbour, dst):
+            if self.dfs(neighbour, dst):
                 return True
         # removing the current node from the path because we didn't find anything
         self.path.remove(node)
