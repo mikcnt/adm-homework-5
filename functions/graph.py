@@ -27,6 +27,8 @@ class Graph:
         self.out_neighbours = defaultdict(set)
         self.edges_num = 0
 
+        self.dist = defaultdict(dict)
+
     def __getitem__(self, node):
         if node not in self.nodes:
             raise KeyError(node)
@@ -54,6 +56,22 @@ class Graph:
     def add_edges_from(self, edges):
         for src, dst in edges:
             self.add_edge(src, dst)
+
+    def get_ids(self):
+        self.ids_nodes = {}
+        for i, node in enumerate(self.nodes):
+            self.ids_nodes[i] = node
+        self.nodes_ids = {v: k for k, v in self.ids_nodes.items()}
+
+    def get_adj_matrix(self):
+        self.get_ids()
+        size = len(self.nodes)
+        self.adj_matrix = np.zeros((size, size), dtype=bool)
+        for u in self.ids_nodes:
+            u_node = self.ids_nodes[u]
+            for v_node in self.edges[u_node]:
+                v = self.nodes_ids[v_node]
+                self.adj_matrix[u][v] = True
 
     def is_directed(self):
         """Check if the graph is directed, by looking at the source nodes of the edges and searching for an inverse edge."""
@@ -144,8 +162,7 @@ class Graph:
         return pages
 
     def shortest_path(self, src, dst):
-        """Returns the shortest path between a starting node and a target node,
-        according to the Dijkstra algorithm.
+        """Returns the shortest path between a starting node and a target node.
 
         Args:
             src (int): First node of the path.
