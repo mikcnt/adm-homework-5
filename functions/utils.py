@@ -106,18 +106,41 @@ def graph_example():
     nx.draw(G, pos, with_labels=True)
 
 
-def categories_size(graph, threshold=1000):
+def categories_size(graph):
+    """Returns table containing the number of nodes for category of a graph.
+
+    Args:
+        graph (Graph): Input graph.
+
+    Returns:
+        list: List of tuples in the form (cat, size).
+    """
     table = []
     for category in graph.cat_link_dict.keys():
         size = len(graph.nodes_in_category(category))
-        if size > threshold:
-            table.append([category, size])
+        table.append((category, size))
 
     table = sorted(table, key=lambda x: x[1], reverse=True)
+    return table
 
+
+def generate_table(table, title="", amount=15):
+    """Prints a pretty table from a list of tuples/lists.
+
+    Args:
+        table (list): List of tuples/lists in the form (name, attribute).
+        title (str, optional): Title of the table. Defaults to "". If empty, no title is shown.
+        amount (int, optional): Amount of rows of the table to print. Defaults to 15.
+    """
+    table = table[:amount]
     max_lenght = max([len(x[0]) for x in table])
+    max_lenght1 = max([len(str(x[1])) for x in table])
 
     width = max_lenght + 3
-
-    for category, size in table:
-        print("{} | {}".format(category.ljust(width), str(size).ljust(width)))
+    all_width = width + max_lenght1 + 3
+    if title:
+        centered_title = title.center(all_width)
+        print(centered_title)
+    print("-" * all_width)
+    for category, score in table:
+        print("{} | {}".format(category.ljust(width), str(score).ljust(width)))

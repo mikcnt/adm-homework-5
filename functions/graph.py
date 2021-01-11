@@ -2,7 +2,7 @@ import numpy as np
 from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
 from collections import deque
-from .utils import categories_in_graph
+from .utils import categories_in_graph, link_category_dict
 
 
 class Graph:
@@ -20,6 +20,7 @@ class Graph:
 
     def __init__(self):
         self.cat_link_dict = categories_in_graph()
+        # self.link_cat_dict = link_category_dict()
         self.categories = self.retrieve_categories()
         self.edges = defaultdict(set)
         self.nodes = set()
@@ -199,9 +200,6 @@ class Graph:
         Returns:
             dict: Dictionary containing all the distancies.
         """
-        # TODO: what about nodes that are not reachable from src?
-        # we can probably use a defaultdict with a high value
-
         # Distances are going to be kept in the form
         # {node: distance between src and node}
         distances = {src: 0}
@@ -393,3 +391,50 @@ def min_edge_cut(graph, src, dst):
     d = DisjointPaths(graph)
     d.search(src, dst)
     return len(d.paths)
+
+
+def ordered_distances(graph, cat, link_cat_dict):
+    """Computes the ordered distances of all the categories.
+
+    Args:
+        graph (Graph): Input graph.
+        cat (str): Central category for which we want the distances.
+
+    Returns:
+        list: List of tuples in the form (category, distance from central category).
+    """
+    # Extract the nodes in the category
+    cat_nodes = graph.nodes_in_category(cat)
+    distances = {}
+    # Compute the distances between every node of the central category and 
+    # every other node of the graph
+    # Distances is going to be in the form node -> {u: dist from u, v: dist from v, ...}
+    for node in cat_nodes:
+        distances[node] = graph.get_distances(node)
+
+    # cat_dist = {c1: [dist from u, dist from v, ...], c2: [...], ...}
+    # where u, v, ... are nodes of c1
+    cat_dist = defaultdict(list)
+    # u are the nodes in the central category
+    for u in distances:
+        for v in distances[u].keys():
+            # Compute the category where v belongs
+            v_cat = link_cat_dict[v]
+            # For all the nodes in the central category, store the distance between
+            # them and the nodes in each other category
+            cat_dist[v_cat].append(distances[u][v])
+
+    # Distance between category and itself
+    del cat_dist[cat]
+
+    # For each category, retrieve the distance using the median of all the lenght
+    # of the shortest paths
+    fin_dist = {}
+    for cat, path_len in cat_dist.items():
+        fin_dist[cat] = np.median(path_len)
+
+    # Sort the distances and return them
+    return [
+        (k, v)
+        for k, v in sorted(fin_dist.items(), key=lambda item: item[1], reverse=True)
+    ]
