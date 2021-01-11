@@ -20,7 +20,6 @@ class Graph:
 
     def __init__(self):
         self.cat_link_dict = categories_in_graph()
-        # self.link_cat_dict = link_category_dict()
         self.categories = self.retrieve_categories()
         self.edges = defaultdict(set)
         self.nodes = set()
@@ -275,6 +274,12 @@ class Graph:
     def retrieve_categories(self):
         return list(self.cat_link_dict.keys())
 
+    def category_to_id(self, category):
+        return self.categories.index(category)
+
+    def id_to_category(self, cat_id):
+        return self.categories[cat_id]
+
     def nodes_in_category(self, category):
         """Returns the nodes in the category actually contained in the graph nodes.
 
@@ -406,7 +411,7 @@ def ordered_distances(graph, cat, link_cat_dict):
     # Extract the nodes in the category
     cat_nodes = graph.nodes_in_category(cat)
     distances = {}
-    # Compute the distances between every node of the central category and 
+    # Compute the distances between every node of the central category and
     # every other node of the graph
     # Distances is going to be in the form node -> {u: dist from u, v: dist from v, ...}
     for node in cat_nodes:
@@ -438,3 +443,28 @@ def ordered_distances(graph, cat, link_cat_dict):
         (k, v)
         for k, v in sorted(fin_dist.items(), key=lambda item: item[1], reverse=True)
     ]
+
+
+def create_category_graph(graph, link_cat_dict):
+    """Create new graph that connects the categories of the starting graph.
+    For example, if the starting graph has an edge 1 -> 2, then the new graph
+    will have an edge category(1) -> category(2)
+
+    Args:
+        graph (Graph): Starting graph.
+        link_cat_dict (dict): Dictionary mapping each link to its category.
+
+    Returns:
+        Graph: Graph containing categories (ids) as nodes and links between categories as edges.
+        N.B.: if there are two nodes pointing from category A to category B, only one is kept.
+    """
+    cat_graph = Graph()
+    # category is just an alias to retrieve the category (id) for a given node
+    category = lambda x: graph.category_to_id(link_cat_dict[x])
+    # Iterate through all the edges of the starting graph and add the edges to the new graph
+    for v, neighbours in graph.edges.items():
+        v_cat = category(v)
+        for n in neighbours:
+            n_cat = category(n)
+            cat_graph.add_edge(v_cat, n_cat)
+    return cat_graph
