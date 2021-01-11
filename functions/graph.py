@@ -297,7 +297,7 @@ class Graph:
         return set(self.cat_link_dict[category]).intersection(self.nodes)
 
 
-def category_subgraph(graph, category1, category2):
+def induced_subgraph(graph, category1, category2):
     """Create subgraph containing the edges with source nodes in the
     first category and destination nodes in the second one.
 
