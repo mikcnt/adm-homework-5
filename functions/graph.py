@@ -27,8 +27,6 @@ class Graph:
         self.out_neighbours = defaultdict(set)
         self.edges_num = 0
 
-        self.dist = defaultdict(dict)
-
     def __getitem__(self, node):
         if node not in self.nodes:
             raise KeyError(node)
@@ -191,6 +189,22 @@ class Graph:
                 visited.add(neighbour)
         # We reach this part only if there is no path between vertices
         return None
+
+    def get_distances(self, src):
+        self.max_distance = 0
+        distances = {src: 0}  # {endNode:distance from src}
+        to_link = deque([src])  # start at src (distance=0)
+        while to_link:
+            start = to_link.popleft()  # previous end, will chain to next
+            dist = distances[start] + 1  # new next are at +1
+            for end in self.edges[start]:  # next end nodes
+                if end in distances:
+                    continue  # new ones only
+                distances[end] = dist  # record distance
+                to_link.append(end)  # will link from there
+                self.max_distance = max(self.max_distance, dist)
+
+        return distances
 
     def most_central_article(self, category):
         """Compute the most central node of a category.
