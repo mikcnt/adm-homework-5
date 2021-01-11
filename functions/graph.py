@@ -2,7 +2,7 @@ import numpy as np
 from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
 from collections import deque
-from .utils import categories_in_graph
+from .utils import categories_in_graph, link_category_dict
 
 
 class Graph:
@@ -14,19 +14,19 @@ class Graph:
         nodes (set): Set containing the whole list of nodes of the graph.
         in_neighbours (defaultdict): Dictionary containing the in-neighbours of a node.
         out_neighbours (defaultdict): Dictionary containing the out-neighbours of a node.
-        __edges_num (int): Number of edges in the graph.
+        edges_num (int): Number of edges in the graph.
 
     """
 
     def __init__(self):
         self.cat_link_dict = categories_in_graph()
+        # self.link_cat_dict = link_category_dict()
+        self.categories = self.retrieve_categories()
         self.edges = defaultdict(set)
         self.nodes = set()
         self.in_neighbours = defaultdict(set)
         self.out_neighbours = defaultdict(set)
-        self.__edges_num = 0
-
-        self.visited = set()
+        self.edges_num = 0
 
     def __getitem__(self, node):
         if node not in self.nodes:
@@ -43,7 +43,7 @@ class Graph:
         # If the edge already exist, we won't do anything
         if dst in self.edges[src]:
             return
-        self.__edges_num += 1
+        self.edges_num += 1
         # Add the actual edge
         self.edges[src].add(dst)
         # Add both source and dest nodes to the set of nodes
@@ -55,6 +55,22 @@ class Graph:
     def add_edges_from(self, edges):
         for src, dst in edges:
             self.add_edge(src, dst)
+
+    def get_ids(self):
+        self.ids_nodes = {}
+        for i, node in enumerate(self.nodes):
+            self.ids_nodes[i] = node
+        self.nodes_ids = {v: k for k, v in self.ids_nodes.items()}
+
+    def get_adj_matrix(self):
+        self.get_ids()
+        size = len(self.nodes)
+        self.adj_matrix = np.zeros((size, size), dtype=bool)
+        for u in self.ids_nodes:
+            u_node = self.ids_nodes[u]
+            for v_node in self.edges[u_node]:
+                v = self.nodes_ids[v_node]
+                self.adj_matrix[u][v] = True
 
     def is_directed(self):
         """Check if the graph is directed, by looking at the source nodes of the edges and searching for an inverse edge."""
@@ -72,7 +88,7 @@ class Graph:
         return len(self.nodes)
 
     def number_of_edges(self):
-        return self.__edges_num
+        return self.edges_num
 
     def nodes_with_edges(self):
         return len(self.edges.keys())
@@ -144,22 +160,8 @@ class Graph:
             src_pages = temp
         return pages
 
-    def bfs(self, root):
-        visited = set()
-        queue = deque([root])
-        visited.add(root)
-
-        while queue:
-            vertex = queue.popleft()
-            for neighbour in self.edges[vertex]:
-                if neighbour not in visited:
-                    visited.add(neighbour)
-                    queue.append(neighbour)
-        return visited
-
     def shortest_path(self, src, dst):
-        """Returns the shortest path between a starting node and a target node,
-        according to the Dijkstra algorithm.
+        """Returns the shortest path between a starting node and a target node.
 
         Args:
             src (int): First node of the path.
@@ -188,6 +190,33 @@ class Graph:
                 visited.add(neighbour)
         # We reach this part only if there is no path between vertices
         return None
+
+    def get_distances(self, src):
+        """Given a node src, returns the distances between src and all the other nodes of the graph.
+
+        Args:
+            src (int): Source node from which we compute distancies.
+
+        Returns:
+            dict: Dictionary containing all the distancies.
+        """
+        # Distances are going to be kept in the form
+        # {node: distance between src and node}
+        distances = {src: 0}
+        queue = deque([src])
+        while queue:
+            start = queue.popleft()
+            # Current distance is +1 from before
+            dist = distances[start] + 1
+            # next end nodes
+            for end in self.edges[start]:
+                # Skip nodes for which we already have computed the distance
+                if end in distances:
+                    continue
+                # Set distances
+                distances[end] = dist
+                queue.append(end)
+        return distances
 
     def most_central_article(self, category):
         """Compute the most central node of a category.
@@ -242,6 +271,9 @@ class Graph:
         # We return the max of these distances, since it is the
         # value for which we are sure we hit all the nodes in `pages`
         return max(distances)
+
+    def retrieve_categories(self):
+        return list(self.cat_link_dict.keys())
 
     def nodes_in_category(self, category):
         """Returns the nodes in the category actually contained in the graph nodes.
@@ -359,3 +391,50 @@ def min_edge_cut(graph, src, dst):
     d = DisjointPaths(graph)
     d.search(src, dst)
     return len(d.paths)
+
+
+def ordered_distances(graph, cat, link_cat_dict):
+    """Computes the ordered distances of all the categories.
+
+    Args:
+        graph (Graph): Input graph.
+        cat (str): Central category for which we want the distances.
+
+    Returns:
+        list: List of tuples in the form (category, distance from central category).
+    """
+    # Extract the nodes in the category
+    cat_nodes = graph.nodes_in_category(cat)
+    distances = {}
+    # Compute the distances between every node of the central category and 
+    # every other node of the graph
+    # Distances is going to be in the form node -> {u: dist from u, v: dist from v, ...}
+    for node in cat_nodes:
+        distances[node] = graph.get_distances(node)
+
+    # cat_dist = {c1: [dist from u, dist from v, ...], c2: [...], ...}
+    # where u, v, ... are nodes of c1
+    cat_dist = defaultdict(list)
+    # u are the nodes in the central category
+    for u in distances:
+        for v in distances[u].keys():
+            # Compute the category where v belongs
+            v_cat = link_cat_dict[v]
+            # For all the nodes in the central category, store the distance between
+            # them and the nodes in each other category
+            cat_dist[v_cat].append(distances[u][v])
+
+    # Distance between category and itself
+    del cat_dist[cat]
+
+    # For each category, retrieve the distance using the median of all the lenght
+    # of the shortest paths
+    fin_dist = {}
+    for cat, path_len in cat_dist.items():
+        fin_dist[cat] = np.median(path_len)
+
+    # Sort the distances and return them
+    return [
+        (k, v)
+        for k, v in sorted(fin_dist.items(), key=lambda item: item[1], reverse=True)
+    ]
