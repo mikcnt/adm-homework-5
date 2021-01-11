@@ -403,7 +403,7 @@ def min_edge_cut(graph, src, dst):
     return len(d.paths)
 
 
-def ordered_distances(graph, cat, link_cat_dict):
+def ordered_distances(graph, cat, unique_cat_dict):
     """Computes the ordered distances of all the categories between one central category.
     Distances are computed as follows:
     dist(c1, c2) = median([shortest_path(n1, n2) for every pair (n1, n2) s.t. n1 in c1 and n2 in c2]).
@@ -411,6 +411,7 @@ def ordered_distances(graph, cat, link_cat_dict):
     Args:
         graph (Graph): Input graph.
         cat (str): Central category for which we want the distances.
+        unique_cat_dict (dict):
 
     Returns:
         list: List of tuples in the form (category, distance from central category).
@@ -432,7 +433,7 @@ def ordered_distances(graph, cat, link_cat_dict):
     for u in distances:
         for v in distances[u].keys():
             # Compute the category where v belongs
-            v_cat = link_cat_dict[v]
+            v_cat = unique_cat_dict[v]
             # For all the nodes in the central category, store the distance between
             # them and the nodes in each other category
             cat_dist[v_cat].append(distances[u][v])
@@ -452,14 +453,14 @@ def ordered_distances(graph, cat, link_cat_dict):
     ]
 
 
-def create_category_graph(graph, link_cat_dict):
+def create_category_graph(graph, unique_cat_dict):
     """Create new graph that connects the categories of the starting graph.
     For example, if the starting graph has an edge 1 -> 2, then the new graph
     will have an edge category(1) -> category(2)
 
     Args:
         graph (Graph): Starting graph.
-        link_cat_dict (dict): Dictionary mapping each link to its category.
+        unique_cat_dict (dict): Dictionary mapping each link to its category.
 
     Returns:
         Graph: Graph containing categories (ids) as nodes and links between categories as edges.
@@ -467,7 +468,7 @@ def create_category_graph(graph, link_cat_dict):
     """
     cat_graph = Graph()
     # category is just an alias to retrieve the category (id) for a given node
-    category = lambda x: graph.category_to_id(link_cat_dict[x])
+    category = lambda x: graph.category_to_id(unique_cat_dict[x])
     # Iterate through all the edges of the starting graph and add the edges to the new graph
     for v, neighbours in graph.edges.items():
         v_cat = category(v)
@@ -475,3 +476,57 @@ def create_category_graph(graph, link_cat_dict):
             n_cat = category(n)
             cat_graph.add_edge(v_cat, n_cat)
     return cat_graph
+
+# TODO: docstrings, comments and everything needed for pagerank algorithms
+def pagerank(graph, alpha=0.85, max_iter=100, tol=1.0e-6):
+    if not hasattr(graph, "weights"):
+        get_weights(graph)
+
+    if len(graph.nodes) == 0:
+        return {}
+
+    N = len(graph.nodes)
+
+    # Choose fixed starting vector if not given
+    x = dict.fromkeys(graph.nodes, 1.0 / N)
+
+    p = dict.fromkeys(graph.nodes, 1.0 / N)
+
+    dangling_weights = p
+
+    dangling_nodes = [n for n in graph.nodes if graph.out_degree(n) == 0.0]
+
+    # power iteration: make up to max_iter iterations
+    for _ in range(max_iter):
+        xlast = x
+        x = dict.fromkeys(xlast.keys(), 0)
+        danglesum = alpha * sum(xlast[n] for n in dangling_nodes)
+        for n in x:
+            # this matrix multiply looks odd because it is
+            # doing a left multiply x^T=xlast^T*G
+            for nbr in graph[n]:
+                x[nbr] += alpha * xlast[n] * graph.weights[n][nbr]  # W[n][nbr][weight]
+            x[n] += danglesum * dangling_weights[n] + (1.0 - alpha) * p[n]
+        # check convergence, l1 norm
+        err = sum([abs(x[n] - xlast[n]) for n in x])
+        if err < N * tol:
+            return x
+    print("Pagerank didn't converge.")
+    return
+
+
+def get_weights(graph):
+    graph.weights = defaultdict(dict)
+    for v in graph.nodes:
+        for n in graph[v]:
+            graph.weights[v][n] = 1 / graph.out_degree(v)
+
+
+def sort_pr(graph, pr_dict):
+    cat_name = graph.id_to_category
+    # table = [(category_name(cat_id), score) for cat_id, score in pr_dict.items()]
+
+    return [
+        (cat_name(cat_id), score)
+        for cat_id, score in sorted(pr_dict.items(), key=lambda x: x[1], reverse=True)
+    ]
