@@ -8,8 +8,19 @@ import networkx as nx
 # For reproducibility
 np.random.seed(42)
 
-# Preprocess 'wiki-topcats-categories.txt' to extract one single category for each link
+
 def links_per_cat(line):
+    """Given a line of the "wiki-topcats-categories.txt" file,
+    extract the category and the links (first argument is the category,
+    following ones are the links).
+
+    Args:
+        line (str): String containing category and links. Each line is in the form:
+                    "Category;category_name: link_1 link_2 ..."
+
+    Returns:
+        str, list: Tuple containing string for the category and list of ints for the links.
+    """
     category, links = line.split(";")
     category = category.split(":")[1]
     links = links.strip().split(" ")
@@ -21,6 +32,12 @@ def links_per_cat(line):
 
 
 def link_category_dict():
+    """Computes the link-category dictionary iterating on the lines of
+    the wiki-topcats-categories.txt file.
+
+    Returns:
+        dict: Dictionary in the form {link1: [cat1, cat2, ...], ...}.
+    """
     link_cat = defaultdict(list)
 
     with open("data/wiki-topcats-categories.txt") as file:
@@ -34,7 +51,39 @@ def link_category_dict():
     return link_cat
 
 
+def unique_category_dict():
+    """Computes the unique link-category dictionary, iterating on the lines of
+    the wiki-topcats-categories-processed.txt file.
+
+    Returns:
+        dict: Dictionary in the form {link1: cat1, link2: cat2, ...}.
+    """
+    unique_cat_dict = {}
+
+    with open("data/wiki-topcats-categories-processed.txt") as file:
+        for line in file:
+            line = line.strip()
+            category, links = line.split(":")
+            links = links.strip().split()
+            try:
+                links = [int(link) for link in links]
+            except:
+                links = None
+            for link in links:
+                unique_cat_dict[link] = category
+
+    return unique_cat_dict
+
+
 def category_link_dict(link_cat_dict):
+    """[summary]
+
+    Args:
+        link_cat_dict ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     # Extract one random category for each link
     for link, cats in link_cat_dict.items():
         size = len(cats)

@@ -10,6 +10,7 @@ class Graph:
 
     Attributes:
         cat_link_dict (dict): Dictionary containing categories as keys and the links for each category as values.
+        categories (list): List of all the possible categories. Even empty categories are kept.
         edges (defaultdict): Edges of the graph, in the form of src (key) -> dst (values, can be more than 1).
         nodes (set): Set containing the whole list of nodes of the graph.
         in_neighbours (defaultdict): Dictionary containing the in-neighbours of a node.
@@ -20,7 +21,6 @@ class Graph:
 
     def __init__(self):
         self.cat_link_dict = categories_in_graph()
-        # self.link_cat_dict = link_category_dict()
         self.categories = self.retrieve_categories()
         self.edges = defaultdict(set)
         self.nodes = set()
@@ -29,6 +29,17 @@ class Graph:
         self.edges_num = 0
 
     def __getitem__(self, node):
+        """Item getter. Returns the out-neighbours of a node.
+
+        Args:
+            node (int): Input node.
+
+        Raises:
+            KeyError: Error is raised if there is no such node in the graph.
+
+        Returns:
+            list: List of nodes for which there is an edge node -> n.
+        """
         if node not in self.nodes:
             raise KeyError(node)
         return list(self.edges[node])
@@ -53,27 +64,18 @@ class Graph:
         self.out_neighbours[src].add(dst)
 
     def add_edges_from(self, edges):
+        """Add a list of edge to the existing graph.
+
+        Args:
+            edges (list): List of tuples/lists in the form (src, dst),
+                          representing edges.
+        """
         for src, dst in edges:
             self.add_edge(src, dst)
 
-    def get_ids(self):
-        self.ids_nodes = {}
-        for i, node in enumerate(self.nodes):
-            self.ids_nodes[i] = node
-        self.nodes_ids = {v: k for k, v in self.ids_nodes.items()}
-
-    def get_adj_matrix(self):
-        self.get_ids()
-        size = len(self.nodes)
-        self.adj_matrix = np.zeros((size, size), dtype=bool)
-        for u in self.ids_nodes:
-            u_node = self.ids_nodes[u]
-            for v_node in self.edges[u_node]:
-                v = self.nodes_ids[v_node]
-                self.adj_matrix[u][v] = True
-
     def is_directed(self):
-        """Check if the graph is directed, by looking at the source nodes of the edges and searching for an inverse edge."""
+        """Check if the graph is directed. Graph is considered directed
+        if there is an inverse path for each edge of the graph."""
         for src, dest in self.edges.items():
             is_direct = False
             for node in dest:
@@ -85,13 +87,12 @@ class Graph:
         return is_direct
 
     def number_of_nodes(self):
+        """Returns the number of nodes in the graph (even those without edges)."""
         return len(self.nodes)
 
     def number_of_edges(self):
+        """Returns the number of edges in the graph."""
         return self.edges_num
-
-    def nodes_with_edges(self):
-        return len(self.edges.keys())
 
     def density(self):
         """The density of a graph is defined as follows:
@@ -273,7 +274,16 @@ class Graph:
         return max(distances)
 
     def retrieve_categories(self):
+        """Returns all the categories from the given data file (even empty ones)."""
         return list(self.cat_link_dict.keys())
+
+    def category_to_id(self, category):
+        """Convers a category string name to a unique integer id."""
+        return self.categories.index(category)
+
+    def id_to_category(self, cat_id):
+        """Converts back a category id to its string name."""
+        return self.categories[cat_id]
 
     def nodes_in_category(self, category):
         """Returns the nodes in the category actually contained in the graph nodes.
@@ -287,7 +297,7 @@ class Graph:
         return set(self.cat_link_dict[category]).intersection(self.nodes)
 
 
-def category_subgraph(graph, category1, category2):
+def induced_subgraph(graph, category1, category2):
     """Create subgraph containing the edges with source nodes in the
     first category and destination nodes in the second one.
 
@@ -393,20 +403,24 @@ def min_edge_cut(graph, src, dst):
     return len(d.paths)
 
 
-def ordered_distances(graph, cat, link_cat_dict):
-    """Computes the ordered distances of all the categories.
+def ordered_distances(graph, cat, unique_cat_dict):
+    """Computes the ordered distances of all the categories between one central category.
+    Distances are computed as follows:
+    dist(c1, c2) = median([shortest_path(n1, n2) for every pair (n1, n2) s.t. n1 in c1 and n2 in c2]).
 
     Args:
         graph (Graph): Input graph.
         cat (str): Central category for which we want the distances.
+        unique_cat_dict (dict):
 
     Returns:
         list: List of tuples in the form (category, distance from central category).
+              All the distances are kept except the distance between `cat` and itself.
     """
     # Extract the nodes in the category
     cat_nodes = graph.nodes_in_category(cat)
     distances = {}
-    # Compute the distances between every node of the central category and 
+    # Compute the distances between every node of the central category and
     # every other node of the graph
     # Distances is going to be in the form node -> {u: dist from u, v: dist from v, ...}
     for node in cat_nodes:
@@ -419,7 +433,7 @@ def ordered_distances(graph, cat, link_cat_dict):
     for u in distances:
         for v in distances[u].keys():
             # Compute the category where v belongs
-            v_cat = link_cat_dict[v]
+            v_cat = unique_cat_dict[v]
             # For all the nodes in the central category, store the distance between
             # them and the nodes in each other category
             cat_dist[v_cat].append(distances[u][v])
@@ -435,6 +449,84 @@ def ordered_distances(graph, cat, link_cat_dict):
 
     # Sort the distances and return them
     return [
-        (k, v)
-        for k, v in sorted(fin_dist.items(), key=lambda item: item[1], reverse=True)
+        (k, v) for k, v in sorted(fin_dist.items(), key=lambda x: x[1], reverse=True)
+    ]
+
+
+def create_category_graph(graph, unique_cat_dict):
+    """Create new graph that connects the categories of the starting graph.
+    For example, if the starting graph has an edge 1 -> 2, then the new graph
+    will have an edge category(1) -> category(2)
+
+    Args:
+        graph (Graph): Starting graph.
+        unique_cat_dict (dict): Dictionary mapping each link to its category.
+
+    Returns:
+        Graph: Graph containing categories (ids) as nodes and links between categories as edges.
+        N.B.: if there are two nodes pointing from category A to category B, only one is kept.
+    """
+    cat_graph = Graph()
+    # category is just an alias to retrieve the category (id) for a given node
+    category = lambda x: graph.category_to_id(unique_cat_dict[x])
+    # Iterate through all the edges of the starting graph and add the edges to the new graph
+    for v, neighbours in graph.edges.items():
+        v_cat = category(v)
+        for n in neighbours:
+            n_cat = category(n)
+            cat_graph.add_edge(v_cat, n_cat)
+    return cat_graph
+
+# TODO: docstrings, comments and everything needed for pagerank algorithms
+def pagerank(graph, alpha=0.85, max_iter=100, tol=1.0e-6):
+    if not hasattr(graph, "weights"):
+        get_weights(graph)
+
+    if len(graph.nodes) == 0:
+        return {}
+
+    N = len(graph.nodes)
+
+    # Choose fixed starting vector if not given
+    x = dict.fromkeys(graph.nodes, 1.0 / N)
+
+    p = dict.fromkeys(graph.nodes, 1.0 / N)
+
+    dangling_weights = p
+
+    dangling_nodes = [n for n in graph.nodes if graph.out_degree(n) == 0.0]
+
+    # power iteration: make up to max_iter iterations
+    for _ in range(max_iter):
+        xlast = x
+        x = dict.fromkeys(xlast.keys(), 0)
+        danglesum = alpha * sum(xlast[n] for n in dangling_nodes)
+        for n in x:
+            # this matrix multiply looks odd because it is
+            # doing a left multiply x^T=xlast^T*G
+            for nbr in graph[n]:
+                x[nbr] += alpha * xlast[n] * graph.weights[n][nbr]  # W[n][nbr][weight]
+            x[n] += danglesum * dangling_weights[n] + (1.0 - alpha) * p[n]
+        # check convergence, l1 norm
+        err = sum([abs(x[n] - xlast[n]) for n in x])
+        if err < N * tol:
+            return x
+    print("Pagerank didn't converge.")
+    return
+
+
+def get_weights(graph):
+    graph.weights = defaultdict(dict)
+    for v in graph.nodes:
+        for n in graph[v]:
+            graph.weights[v][n] = 1 / graph.out_degree(v)
+
+
+def sort_pr(graph, pr_dict):
+    cat_name = graph.id_to_category
+    # table = [(category_name(cat_id), score) for cat_id, score in pr_dict.items()]
+
+    return [
+        (cat_name(cat_id), score)
+        for cat_id, score in sorted(pr_dict.items(), key=lambda x: x[1], reverse=True)
     ]
