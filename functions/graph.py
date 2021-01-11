@@ -191,19 +191,33 @@ class Graph:
         return None
 
     def get_distances(self, src):
-        self.max_distance = 0
-        distances = {src: 0}  # {endNode:distance from src}
-        to_link = deque([src])  # start at src (distance=0)
-        while to_link:
-            start = to_link.popleft()  # previous end, will chain to next
-            dist = distances[start] + 1  # new next are at +1
-            for end in self.edges[start]:  # next end nodes
-                if end in distances:
-                    continue  # new ones only
-                distances[end] = dist  # record distance
-                to_link.append(end)  # will link from there
-                self.max_distance = max(self.max_distance, dist)
+        """Given a node src, returns the distances between src and all the other nodes of the graph.
 
+        Args:
+            src (int): Source node from which we compute distancies.
+
+        Returns:
+            dict: Dictionary containing all the distancies.
+        """
+        # TODO: what about nodes that are not reachable from src?
+        # we can probably use a defaultdict with a high value
+
+        # Distances are going to be kept in the form
+        # {node: distance between src and node}
+        distances = {src: 0}
+        queue = deque([src])
+        while queue:
+            start = queue.popleft()
+            # Current distance is +1 from before
+            dist = distances[start] + 1
+            # next end nodes
+            for end in self.edges[start]:
+                # Skip nodes for which we already have computed the distance
+                if end in distances:
+                    continue
+                # Set distances
+                distances[end] = dist
+                queue.append(end)
         return distances
 
     def most_central_article(self, category):
