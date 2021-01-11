@@ -10,6 +10,7 @@ class Graph:
 
     Attributes:
         cat_link_dict (dict): Dictionary containing categories as keys and the links for each category as values.
+        categories (list): List of all the possible categories. Even empty categories are kept.
         edges (defaultdict): Edges of the graph, in the form of src (key) -> dst (values, can be more than 1).
         nodes (set): Set containing the whole list of nodes of the graph.
         in_neighbours (defaultdict): Dictionary containing the in-neighbours of a node.
@@ -28,6 +29,17 @@ class Graph:
         self.edges_num = 0
 
     def __getitem__(self, node):
+        """Item getter. Returns the out-neighbours of a node.
+
+        Args:
+            node (int): Input node.
+
+        Raises:
+            KeyError: Error is raised if there is no such node in the graph.
+
+        Returns:
+            list: List of nodes for which there is an edge node -> n.
+        """
         if node not in self.nodes:
             raise KeyError(node)
         return list(self.edges[node])
@@ -52,27 +64,18 @@ class Graph:
         self.out_neighbours[src].add(dst)
 
     def add_edges_from(self, edges):
+        """Add a list of edge to the existing graph.
+
+        Args:
+            edges (list): List of tuples/lists in the form (src, dst),
+                          representing edges.
+        """
         for src, dst in edges:
             self.add_edge(src, dst)
 
-    def get_ids(self):
-        self.ids_nodes = {}
-        for i, node in enumerate(self.nodes):
-            self.ids_nodes[i] = node
-        self.nodes_ids = {v: k for k, v in self.ids_nodes.items()}
-
-    def get_adj_matrix(self):
-        self.get_ids()
-        size = len(self.nodes)
-        self.adj_matrix = np.zeros((size, size), dtype=bool)
-        for u in self.ids_nodes:
-            u_node = self.ids_nodes[u]
-            for v_node in self.edges[u_node]:
-                v = self.nodes_ids[v_node]
-                self.adj_matrix[u][v] = True
-
     def is_directed(self):
-        """Check if the graph is directed, by looking at the source nodes of the edges and searching for an inverse edge."""
+        """Check if the graph is directed. Graph is considered directed
+        if there is an inverse path for each edge of the graph."""
         for src, dest in self.edges.items():
             is_direct = False
             for node in dest:
@@ -84,13 +87,12 @@ class Graph:
         return is_direct
 
     def number_of_nodes(self):
+        """Returns the number of nodes in the graph (even those without edges)."""
         return len(self.nodes)
 
     def number_of_edges(self):
+        """Returns the number of edges in the graph."""
         return self.edges_num
-
-    def nodes_with_edges(self):
-        return len(self.edges.keys())
 
     def density(self):
         """The density of a graph is defined as follows:
@@ -272,12 +274,15 @@ class Graph:
         return max(distances)
 
     def retrieve_categories(self):
+        """Returns all the categories from the given data file (even empty ones)."""
         return list(self.cat_link_dict.keys())
 
     def category_to_id(self, category):
+        """Convers a category string name to a unique integer id."""
         return self.categories.index(category)
 
     def id_to_category(self, cat_id):
+        """Converts back a category id to its string name."""
         return self.categories[cat_id]
 
     def nodes_in_category(self, category):
@@ -399,7 +404,9 @@ def min_edge_cut(graph, src, dst):
 
 
 def ordered_distances(graph, cat, link_cat_dict):
-    """Computes the ordered distances of all the categories.
+    """Computes the ordered distances of all the categories between one central category.
+    Distances are computed as follows:
+    dist(c1, c2) = median([shortest_path(n1, n2) for every pair (n1, n2) s.t. n1 in c1 and n2 in c2]).
 
     Args:
         graph (Graph): Input graph.
@@ -407,6 +414,7 @@ def ordered_distances(graph, cat, link_cat_dict):
 
     Returns:
         list: List of tuples in the form (category, distance from central category).
+              All the distances are kept except the distance between `cat` and itself.
     """
     # Extract the nodes in the category
     cat_nodes = graph.nodes_in_category(cat)
@@ -440,8 +448,7 @@ def ordered_distances(graph, cat, link_cat_dict):
 
     # Sort the distances and return them
     return [
-        (k, v)
-        for k, v in sorted(fin_dist.items(), key=lambda item: item[1], reverse=True)
+        (k, v) for k, v in sorted(fin_dist.items(), key=lambda x: x[1], reverse=True)
     ]
 
 
