@@ -31,14 +31,14 @@ def links_per_cat(line):
     return category, links
 
 
-def link_category_dict():
+def link_cat():
     """Computes the link-category dictionary iterating on the lines of
     the wiki-topcats-categories.txt file.
 
     Returns:
         dict: Dictionary in the form {link1: [cat1, cat2, ...], ...}.
     """
-    link_cat = defaultdict(list)
+    link_cat_dict = defaultdict(list)
 
     with open("data/wiki-topcats-categories.txt") as file:
         for line in file:
@@ -46,60 +46,59 @@ def link_category_dict():
             if links_per_cat(line):
                 category, links = links_per_cat(line)
                 for link in links:
-                    link_cat[link].append(category)
+                    link_cat_dict[link].append(category)
 
-    return link_cat
+    return link_cat_dict
 
 
-def unique_category_dict():
-    """Computes the unique link-category dictionary, iterating on the lines of
-    the wiki-topcats-categories-processed.txt file.
+def cat_link():
+    cat_link_dic = defaultdict(list)
 
-    Returns:
-        dict: Dictionary in the form {link1: cat1, link2: cat2, ...}.
-    """
-    unique_cat_dict = {}
-
-    with open("data/wiki-topcats-categories-processed.txt") as file:
+    with open("data/wiki-topcats-categories.txt") as file:
         for line in file:
             line = line.strip()
-            category, links = line.split(":")
-            links = links.strip().split()
-            try:
-                links = [int(link) for link in links]
-            except:
-                links = None
-            for link in links:
-                unique_cat_dict[link] = category
+            if links_per_cat(line):
+                category, links = links_per_cat(line)
+                cat_link_dic[category] = links
 
-    return unique_cat_dict
+    return cat_link_dic
 
 
-def category_link_dict(link_cat_dict):
-    """[summary]
+def unique_link_cat(link_cat_dict):
+    unique_link_cat_dict = {}
+    cat_link_dict = cat_link()
+    invalid_categories = {
+        cat
+        for cat, links in cat_link_dict.items()
+        if len(links) < 5000 or len(links) > 30000
+    }
 
-    Args:
-        link_cat_dict ([type]): [description]
-
-    Returns:
-        [type]: [description]
-    """
     # Extract one random category for each link
     for link, cats in link_cat_dict.items():
+        cats = [cat for cat in cats if cat not in invalid_categories]
         size = len(cats)
-        if size == 1:
-            link_cat_dict[link] = cats[0]
+        # Ignore the category if it has zero links
+        if size == 0:
+            continue
+        # If there is just one category, select it
+        elif size == 1:
+            unique_link_cat_dict[link] = cats[0]
+        # Otherwise select random category from the list
         else:
             rand_number = np.random.randint(low=0, high=size)
             rand_choice = cats[rand_number]
-            link_cat_dict[link] = rand_choice
+            unique_link_cat_dict[link] = rand_choice
 
+    return unique_link_cat_dict
+
+
+def unique_cat_link(unique_link_cat_dict):
     # Get the inverse dictionary, having categories as keys and links as values
-    cat_link_dict = defaultdict(list)
-    for link, cat in link_cat_dict.items():
-        cat_link_dict[cat].append(link)
+    uniq_cat_link = defaultdict(list)
+    for link, cat in unique_link_cat_dict.items():
+        uniq_cat_link[cat].append(link)
 
-    return cat_link_dict
+    return uniq_cat_link
 
 
 def write_category_processed(cat_link_dict):
@@ -169,19 +168,26 @@ def categories_size(graph):
         size = len(graph.nodes_in_category(category))
         table.append((category, size))
 
-    table = sorted(table, key=lambda x: x[1], reverse=True)
+    # table = sorted(table, key=lambda x: x[1], reverse=True)
     return table
 
 
-def generate_table(table, title="", amount=15):
+def generate_table(table, title="", amount='all', sort_key=lambda x: x[1], reverse=True):
     """Prints a pretty table from a list of tuples/lists.
 
     Args:
         table (list): List of tuples/lists in the form (name, attribute).
         title (str, optional): Title of the table. Defaults to "". If empty, no title is shown.
-        amount (int, optional): Amount of rows of the table to print. Defaults to 15.
+        amount (int or 'all', optional): Amount of rows of the table to print.
+                                         If 'all', all the rows are printed. Defaults to 'all'.
+        sort_key (function, optional): Sorting key for the table.
+                                       Defaults to lambda x: x[1] (sort by score).
+        reverse (bool, optional): If False, results are sorted from lowest to highest. Defaults to True.
     """
-    table = table[:amount]
+    if sort_key is not None:
+        table = sorted(table, key=sort_key, reverse=reverse)
+    if amount != 'all':
+        table = table[:amount]
     max_lenght = max([len(x[0]) for x in table])
     max_lenght1 = max([len(str(x[1])) for x in table])
 

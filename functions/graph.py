@@ -2,7 +2,8 @@ import numpy as np
 from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
 from collections import deque
-from .utils import categories_in_graph, link_category_dict
+from tqdm import tqdm
+from .utils import categories_in_graph
 
 
 class Graph:
