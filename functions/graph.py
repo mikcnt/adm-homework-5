@@ -478,49 +478,59 @@ def create_category_graph(graph, unique_cat_dict):
             cat_graph.add_edge(v_cat, n_cat)
     return cat_graph
 
-# TODO: docstrings, comments and everything needed for pagerank algorithms
-def pagerank(graph, alpha=0.85, max_iter=100, tol=1.0e-6):
-    if not hasattr(graph, "weights"):
-        get_weights(graph)
 
+def pagerank(graph, d=0.85, max_iter=100, tol=1.0e-6):
+    """Computes the PageRank score for each node of the graph.
+
+    Args:
+        graph (Graph): Input graph.
+        d (float, optional): Damping factor. Defaults to 0.85.
+        max_iter (int, optional): Maximum number of iterations. Defaults to 100.
+        tol (float, optional): Tolerance factor used to check convergence. Defaults to 1.0e-6.
+
+    Returns:
+        dict: Dictionary containing the PageRank score for each node of the graph.
+    """
+    # If the graph is empty
     if len(graph.nodes) == 0:
         return {}
 
     N = len(graph.nodes)
 
-    # Choose fixed starting vector if not given
+    # This will be useful when computing the denominator in the PR calculation
+    out_degree = graph.out_degree
+    
+    # Iteration 0: initialize pagerank
+    # PR_0(n_i) = 1 / N for every n_i in the graph
     x = dict.fromkeys(graph.nodes, 1.0 / N)
 
-    p = dict.fromkeys(graph.nodes, 1.0 / N)
+    dangling_weights = dict.fromkeys(graph.nodes, 1.0 / N)
 
-    dangling_weights = p
-
-    dangling_nodes = [n for n in graph.nodes if graph.out_degree(n) == 0.0]
+    # Dangling nodes are the nodes without outgoing links
+    dangling_nodes = [n for n in graph.nodes if out_degree(n) == 0.0]
 
     # power iteration: make up to max_iter iterations
     for _ in range(max_iter):
+        # Keep the pagerank scores of the last iteration
         xlast = x
+        # New pagerank scores start at 0
+        # For each node, we sum the PR of its neighbours divided by their out-degree
         x = dict.fromkeys(xlast.keys(), 0)
-        danglesum = alpha * sum(xlast[n] for n in dangling_nodes)
+        # We first compute the score for the dangling nodes
+        # Which will be part of the computation of the score for all the other nodes
+        danglesum = d * sum(xlast[n] for n in dangling_nodes)
         for n in x:
-            # this matrix multiply looks odd because it is
-            # doing a left multiply x^T=xlast^T*G
-            for nbr in graph[n]:
-                x[nbr] += alpha * xlast[n] * graph.weights[n][nbr]  # W[n][nbr][weight]
-            x[n] += danglesum * dangling_weights[n] + (1.0 - alpha) * p[n]
-        # check convergence, l1 norm
+            for in_n in graph.in_neighbours[n]:
+                x[n] += d * xlast[in_n] / out_degree(in_n)
+            x[n] += danglesum * dangling_weights[n] + (1.0 - d) * dangling_weights[n]
+        # Check for convergence
+        # (difference between new PR and last PR is < than tolerance for each node)
         err = sum([abs(x[n] - xlast[n]) for n in x])
         if err < N * tol:
             return x
-    print("Pagerank didn't converge.")
+    # If this isn't the case, PR didn't converge
+    print("Pagerank didn't converge in {}.".format(max_iter))
     return
-
-
-def get_weights(graph):
-    graph.weights = defaultdict(dict)
-    for v in graph.nodes:
-        for n in graph[v]:
-            graph.weights[v][n] = 1 / graph.out_degree(v)
 
 
 def sort_pr(graph, pr_dict):
