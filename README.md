@@ -33,5 +33,7 @@ The repository consists of the following files:
     > This is the core of this repository. In fact it contains the results of our implementations and researches. Notice that there are actually very few lines of code in this notebook, the rest is contained in the functions directory.
 * __`functions`__:
     > This directory contains the implementation of the functions we call in the main Jupyter Notebook file. Inside it we can find two files: __`graph.py`__ is a module containing all the scripts used to work with graphs, while __`utils.py`__ is a set of utility functions, mainly used during the preprocess part.
+* __`data`__:
+    > This directory should contain the actual data used in the algorithms. For obvious reasons, the main data files are obscured by the .gitignore and just the preprocessed file generated during the preprocessing state has been uploaded.
 * __`requirements.txt`__:
     > A txt file containing the dependecies of the project; see the usage part for details.
