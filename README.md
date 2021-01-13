@@ -15,7 +15,7 @@ where you have to replace `<env>` with the name you want to give to the new envi
 
 Notice that, unfortunately, this kind of requirements file is built on a Linux machine, and therefore it is not guaranteed that this will work on different OS.
 ### Data folder
-The data files are obviously obscured by a `.gitignore` file. To execute the notebook without any kind of modification in the code, it should be sufficient to create a directory `data` containing all the data files. In order to work, the project folder should at least contain the following files in the shown order:
+The data files are obviously obscured by a `.gitignore` file. To execute the notebook without any kind of modification in the code, it should be sufficient to move the data files to the directory `data`. In order to work, the project folder should at least contain the following files in the shown order:
 ```
 ├── data
 │   ├── wikigraph_reduced.csv
