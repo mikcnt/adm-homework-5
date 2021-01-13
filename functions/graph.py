@@ -3,7 +3,7 @@ from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
 from collections import deque
 from tqdm import tqdm
-from .utils import categories_in_graph
+from .utils import read_cat_link
 
 
 class Graph:
@@ -21,7 +21,7 @@ class Graph:
     """
 
     def __init__(self):
-        self.cat_link_dict = categories_in_graph()
+        self.cat_link_dict = read_cat_link()
         self.categories = self.retrieve_categories()
         self.edges = defaultdict(set)
         self.nodes = set()

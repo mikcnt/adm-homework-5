@@ -52,6 +52,12 @@ def link_cat():
 
 
 def cat_link():
+    """Computes the category-link dictionary iterating on the lines of
+    the wiki-topcats-categories.txt file.
+
+    Returns:
+        dict: Dictionary in the form {cat1: [link1, link2, ...], ...}.
+    """
     cat_link_dic = defaultdict(list)
 
     with open("data/wiki-topcats-categories.txt") as file:
@@ -64,7 +70,16 @@ def cat_link():
     return cat_link_dic
 
 
-def unique_link_cat(link_cat_dict):
+def unique_link_cat(link_cat_dict, cat_link_dict):
+    """Computes the dictionary having one single category for link.
+
+    Args:
+        link_cat_dict (dict): Dictionary containing link as keys and categories as values.
+        cat_link_dict (dict): Dictionary containing category as keys and links as values.
+
+    Returns:
+        dict: Dictionary containing link as keys and unique category as values.
+    """
     unique_link_cat_dict = {}
     cat_link_dict = cat_link()
     invalid_categories = {
@@ -93,6 +108,14 @@ def unique_link_cat(link_cat_dict):
 
 
 def unique_cat_link(unique_link_cat_dict):
+    """Computes the reverse dictionary for the one that maps unique categories to links.
+
+    Args:
+        unique_link_cat_dict (dict): Dictionary containing link as keys and unique category as values.
+
+    Returns:
+        dict: Dictionary mapping each category to its links. Each link has a unique category.
+    """
     # Get the inverse dictionary, having categories as keys and links as values
     uniq_cat_link = defaultdict(list)
     for link, cat in unique_link_cat_dict.items():
@@ -101,14 +124,26 @@ def unique_cat_link(unique_link_cat_dict):
     return uniq_cat_link
 
 
-def write_category_processed(cat_link_dict):
+def write_category_processed(unique_cat_link_dict):
+    """Creates txt file containing the unique-mapping between categories and links.
+
+    Args:
+        unique_cat_link_dict (dict): Dictionary containing the unique-mapping
+                                     between categories and links.
+    """
     with open("data/wiki-topcats-categories-processed.txt", "a") as file:
-        for cat, links in cat_link_dict.items():
+        for cat, links in unique_cat_link_dict.items():
             links = " ".join([str(link) for link in links])
             file.write(cat + ": " + links + "\n")
 
 
-def categories_in_graph():
+def read_cat_link():
+    """Reads the mapping dictionary {cat: link} from the preprocessed file.
+    Use if the preprocessed file has already been created.
+
+    Returns:
+        dict: Dictionary containing the {cat: link} unique mapping.
+    """
     cat_link_dict = {}
     with open("data/wiki-topcats-categories-processed.txt") as f:
         for line in f:
@@ -119,6 +154,20 @@ def categories_in_graph():
             cat_link_dict[category] = links
 
     return cat_link_dict
+
+def read_link_cat():
+    link_cat_dict = {}
+
+    with open('data/wiki-topcats-categories-processed.txt') as file:
+        for line in file:
+            line = line.strip()
+            category, links = line.split(':')
+            links = links.split()
+            links = [int(link) for link in links]
+            for link in links:
+                link_cat_dict[link] = category
+
+    return link_cat_dict
 
 
 def graph_example():
