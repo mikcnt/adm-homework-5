@@ -2,7 +2,6 @@ import numpy as np
 from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
 from collections import deque
-from tqdm import tqdm
 from .utils import read_cat_link
 
 
