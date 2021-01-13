@@ -449,9 +449,7 @@ def ordered_distances(graph, cat, unique_cat_dict):
         fin_dist[cat] = np.median(path_len)
 
     # Sort the distances and return them
-    return [
-        (k, v) for k, v in sorted(fin_dist.items(), key=lambda x: x[1], reverse=True)
-    ]
+    return [(cat, dist) for cat, dist in fin_dist.items()]
 
 
 def create_category_graph(graph, unique_cat_dict):
@@ -499,7 +497,7 @@ def pagerank(graph, d=0.85, max_iter=100, tol=1.0e-6):
 
     # This will be useful when computing the denominator in the PR calculation
     out_degree = graph.out_degree
-    
+
     # Iteration 0: initialize pagerank
     # PR_0(n_i) = 1 / N for every n_i in the graph
     x = dict.fromkeys(graph.nodes, 1.0 / N)
