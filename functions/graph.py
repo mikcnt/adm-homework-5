@@ -342,7 +342,7 @@ class DisjointPaths:
 
     def __init__(self, graph):
         self.graph = graph
-        self.paths = []
+        self.paths = defaultdict(list)
         self.path = []
         self.visited = defaultdict(bool)
 
@@ -353,12 +353,12 @@ class DisjointPaths:
             src (int): Starting node.
             dst (int): Target node.
         """
-        if self.dfs(src, dst):
+        if self.dfs(src, src, dst):
             # needed to find multiple paths
             # otherwise it will not go after the first run (as the src is visited)
             self.search(src, dst)
 
-    def dfs(self, node, dst):
+    def dfs(self, src, node, dst):
         """Helper function, computes a modified version of the depth-first-search.
 
         Args:
@@ -370,7 +370,7 @@ class DisjointPaths:
         """
         if node == dst:
             self.path.append(node)
-            self.paths.append(self.path)
+            self.paths[(src, dst)].append(self.path)
             self.path = []
             return True
 
@@ -380,7 +380,7 @@ class DisjointPaths:
             if self.visited[(node, neighbour)]:
                 continue
             self.visited[(node, neighbour)] = True
-            if self.dfs(neighbour, dst):
+            if self.dfs(src, neighbour, dst):
                 return True
         # removing the current node from the path because we didn't find anything
         self.path.remove(node)
@@ -401,7 +401,7 @@ def min_edge_cut(graph, src, dst):
     """
     d = DisjointPaths(graph)
     d.search(src, dst)
-    return len(d.paths)
+    return len(d.paths[src, dst])
 
 
 def ordered_distances(graph, cat, unique_cat_dict):
