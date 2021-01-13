@@ -226,7 +226,6 @@ def categories_size(graph):
     # table = sorted(table, key=lambda x: x[1], reverse=True)
     return table
 
-
 def generate_table(table, title="", amount='all', sort_key=lambda x: x[1], reverse=True):
     """Prints a pretty table from a list of tuples/lists.
 
