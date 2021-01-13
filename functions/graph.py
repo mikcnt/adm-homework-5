@@ -533,9 +533,5 @@ def pagerank(graph, d=0.85, max_iter=100, tol=1.0e-6):
 
 def sort_pr(graph, pr_dict):
     cat_name = graph.id_to_category
-    # table = [(category_name(cat_id), score) for cat_id, score in pr_dict.items()]
 
-    return [
-        (cat_name(cat_id), score)
-        for cat_id, score in sorted(pr_dict.items(), key=lambda x: x[1], reverse=True)
-    ]
+    return [(cat_name(cat_id), score) for cat_id, score in pr_dict.items()]
