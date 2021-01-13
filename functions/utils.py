@@ -156,6 +156,12 @@ def read_cat_link():
     return cat_link_dict
 
 def read_link_cat():
+    """Reads the mapping dictionary {link: cat} from the preprocessed file.
+    Use if the preprocessed file has already been created.
+
+    Returns:
+        dict: Dictionary containing the {link: cat} unique mapping.
+    """
     link_cat_dict = {}
 
     with open('data/wiki-topcats-categories-processed.txt') as file:
