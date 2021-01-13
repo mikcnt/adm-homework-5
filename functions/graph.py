@@ -97,8 +97,8 @@ class Graph:
 
     def density(self):
         """The density of a graph is defined as follows:
-        - 2*E / (V * (V - 1)) if the graph is undirected;
-        - E / (V * (V - 1)) if the graph is directed.
+        - 2*E / (|V| * (|V| - 1)) if the graph is undirected;
+        - |E| / (|V| * (|V| - 1)) if the graph is directed.
 
         Returns:
             float: Density of the graph (between 0 and 1).
