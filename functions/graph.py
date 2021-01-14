@@ -413,7 +413,7 @@ def min_edge_cut(graph, src, dst):
     return len(disjoint_paths)
 
 
-def ordered_distances(graph, cat, unique_cat_dict):
+def distances_from_category(graph, cat, unique_cat_dict):
     """Computes the ordered distances of all the categories between one central category.
     Distances are computed as follows:
     dist(c1, c2) = median([shortest_path(n1, n2) for every pair (n1, n2) s.t. n1 in c1 and n2 in c2]).
@@ -541,6 +541,8 @@ def pagerank(graph, d=0.85, max_iter=100, tol=1.0e-6):
 
 
 def dict_to_table(graph, pr_dict):
+    """Utility function used to generate a list of tuples from 
+    the dictionary of the pagerank scores."""
     cat_name = graph.id_to_category
 
     return [(cat_name(cat_id), score) for cat_id, score in pr_dict.items()]
