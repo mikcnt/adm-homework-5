@@ -335,26 +335,48 @@ class DisjointPaths(object):
 
     Attributes:
         graph (Graph): Input graph.
-        paths (dict): Dictionary containing the paths for a couple of nodes.
+        paths (list): List containing the disjoint paths.
         visited (dict): Dictionary used to check if an edge has been traversed.
 
     """
 
     def __init__(self, graph):
         self.graph = graph
-        self.paths = defaultdict(list)
-        self.visited = defaultdict(bool)
 
     def search(self, src, dst):
-        self.__helper(src, dst, src, [src])
+        """Main function externally used. Exploits the private function to retrieve
+        and return the disjoint paths.
 
-    def __helper(self, src, dst, node, actual_path):
+        Args:
+            src (int): Source node.
+            dst (int): Target node.
+
+        Returns:
+            list: List containing the disjoint paths from src to dst.
+        """
+        self.paths = []
+        self.visited = defaultdict(bool)
+        self.__search(src, dst, src, [src])
+        return self.paths
+
+    def __search(self, src, dst, node, actual_path):
+        """Helper private function used to compute the disjoint paths between source and node.
+        Being a recursive function, we keep note of the node we're visiting, and the path
+        we're traversing.
+
+        Args:
+            src (int): Source node.
+            dst (int): Target node.
+            node (int): Node on which we call the recursion.
+            actual_path (list): List containing the path we're traversing.
+        """
         # We use a copy to avoid inplace modifications during each
         # recursive call
         path = actual_path.copy()
-        # Once we find the destination, we can stop the recursion
+        # Once we find the destination, we can add the path to the list
+        # of disjoint paths and stop the recursion
         if node == dst:
-            self.paths[(src, dst)].append(path)
+            self.paths.append(path)
             return
 
         # Iterate on the neighbours of the actual node
@@ -369,7 +391,7 @@ class DisjointPaths(object):
             # Store the path
             new_path.append(neigh)
             # Call again the function to go in depth
-            self.__helper(src, dst, neigh, new_path)
+            self.__search(src, dst, neigh, new_path)
         # Once we've concluded all the calls, just exit
         return
 
@@ -387,8 +409,8 @@ def min_edge_cut(graph, src, dst):
         0 if the nodes are not connected.
     """
     d = DisjointPaths(graph)
-    d.search(src, dst)
-    return len(d.paths[src, dst])
+    disjoint_paths = d.search(src, dst)
+    return len(disjoint_paths)
 
 
 def ordered_distances(graph, cat, unique_cat_dict):
