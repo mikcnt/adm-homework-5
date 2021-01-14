@@ -155,6 +155,7 @@ def read_cat_link():
 
     return cat_link_dict
 
+
 def read_link_cat():
     """Reads the mapping dictionary {link: cat} from the preprocessed file.
     Use if the preprocessed file has already been created.
@@ -164,10 +165,10 @@ def read_link_cat():
     """
     link_cat_dict = {}
 
-    with open('data/wiki-topcats-categories-processed.txt') as file:
+    with open("data/wiki-topcats-categories-processed.txt") as file:
         for line in file:
             line = line.strip()
-            category, links = line.split(':')
+            category, links = line.split(":")
             links = links.split()
             links = [int(link) for link in links]
             for link in links:
@@ -226,7 +227,10 @@ def categories_size(graph):
     # table = sorted(table, key=lambda x: x[1], reverse=True)
     return table
 
-def generate_table(table, title="", amount='all', sort_key=lambda x: x[1], reverse=True):
+
+def generate_table(
+    table, title="", amount="all", sort_key=lambda x: x[1], reverse=True
+):
     """Prints a pretty table from a list of tuples/lists.
 
     Args:
@@ -240,7 +244,7 @@ def generate_table(table, title="", amount='all', sort_key=lambda x: x[1], rever
     """
     if sort_key is not None:
         table = sorted(table, key=sort_key, reverse=reverse)
-    if amount != 'all':
+    if amount != "all":
         table = table[:amount]
     max_lenght = max([len(x[0]) for x in table])
     max_lenght1 = max([len(str(x[1])) for x in table])

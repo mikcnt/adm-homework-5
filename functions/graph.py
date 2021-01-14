@@ -5,7 +5,7 @@ from collections import deque
 from .utils import read_cat_link
 
 
-class Graph:
+class Graph(object):
     """Class for directed and undirected graph.
 
     Attributes:
@@ -298,92 +298,80 @@ class Graph:
 
 
 def induced_subgraph(graph, category1, category2):
-    """Create subgraph containing the edges with source nodes in the
-    first category and destination nodes in the second one.
+    """Create subgraph containing the edges with nodes in category1 or category2.
 
     Args:
         graph (Graph): Starting graph.
-        category1 (str): String name of the first input category (source nodes).
-        category2 (str): String name of the second input category (destination nodes).
+        category1 (str): String name of the first input category.
+        category2 (str): String name of the second input category.
 
     Returns:
         Graph: Subgraph with source in cat1 and destination in cat2.
     """
+    # Find the nodes in each of the category
+    # The subgraph will have the union of these nodes as nodes
+    cat1_nodes = graph.nodes_in_category(category1)
+    cat2_nodes = graph.nodes_in_category(category2)
+    union_nodes = cat1_nodes.union(cat2_nodes)
+    # The edges of the subgraph will be the ones that starts either in cat1 or cat2
+    # and end either in cat1 or cat2
+    edges = []
+    for node in union_nodes:
+        for neigh in graph[node]:
+            if neigh in union_nodes:
+                edges.append((node, neigh))
+
+    # Add the edges and update the nodes (some node could have 0 edges
+    # and therefore it could have been skipped when adding the edges)
     subgraph = Graph()
-
-    nodes_in_cat1 = set(graph.cat_link_dict[category1])
-    filtered_nodes1 = nodes_in_cat1.intersection(graph.nodes)
-
-    nodes_in_cat2 = set(graph.cat_link_dict[category2])
-    filtered_nodes2 = nodes_in_cat2.intersection(graph.nodes)
-
-    for src in filtered_nodes1:
-        dest_nodes = graph[src]
-        for dst in dest_nodes:
-            if dst not in filtered_nodes2:
-                continue
-            subgraph.add_edge(src, dst)
+    subgraph.add_edges_from(edges)
+    subgraph.nodes.update(union_nodes)
 
     return subgraph
 
 
-class DisjointPaths:
-    """Class used to compute disjoint paths between two nodes. Uses depth-first-search internally.
+class DisjointPaths(object):
+    """Class to compute disjoint paths between nodes of a graph.
 
     Attributes:
         graph (Graph): Input graph.
-        paths (list): List of disjoint paths. `paths` gets updated whenever a new disjoint path is found.
-        path (list): List containing the temporary path. `path` gets re-initialized whenever an entire path from
-                     source to destination is found.
-        visited (set): Set containing the nodes visited during the search.
+        paths (dict): Dictionary containing the paths for a couple of nodes.
+        visited (dict): Dictionary used to check if an edge has been traversed.
 
     """
 
     def __init__(self, graph):
         self.graph = graph
         self.paths = defaultdict(list)
-        self.path = []
         self.visited = defaultdict(bool)
 
     def search(self, src, dst):
-        """Computes the actual search for the disjoint paths.
+        self.__helper(src, dst, src, [src])
 
-        Args:
-            src (int): Starting node.
-            dst (int): Target node.
-        """
-        if self.dfs(src, src, dst):
-            # needed to find multiple paths
-            # otherwise it will not go after the first run (as the src is visited)
-            self.search(src, dst)
-
-    def dfs(self, src, node, dst):
-        """Helper function, computes a modified version of the depth-first-search.
-
-        Args:
-            node (int): Starting node.
-            dst (int): Target node.
-
-        Returns:
-            boolean: True if a path between node and dst is found, False otherwise.
-        """
+    def __helper(self, src, dst, node, actual_path):
+        # We use a copy to avoid inplace modifications during each
+        # recursive call
+        path = actual_path.copy()
+        # Once we find the destination, we can stop the recursion
         if node == dst:
-            self.path.append(node)
-            self.paths[(src, dst)].append(self.path)
-            self.path = []
-            return True
+            self.paths[(src, dst)].append(path)
+            return
 
-        self.path.append(node)
-
-        for neighbour in self.graph[node]:
-            if self.visited[(node, neighbour)]:
+        # Iterate on the neighbours of the actual node
+        for neigh in self.graph[node]:
+            # As path, create a new branch for each neighbour
+            new_path = path.copy()
+            # Check if the edge has already been visited
+            if self.visited[(node, neigh)]:
                 continue
-            self.visited[(node, neighbour)] = True
-            if self.dfs(src, neighbour, dst):
-                return True
-        # removing the current node from the path because we didn't find anything
-        self.path.remove(node)
-        return False
+            # Otherwise set the flag to True
+            self.visited[(node, neigh)] = True
+            # Store the path
+            new_path.append(neigh)
+            # Call again the function to go in depth
+            self.__helper(src, dst, neigh, new_path)
+        # Once we've concluded all the calls, just exit
+        return
 
 
 def min_edge_cut(graph, src, dst):
